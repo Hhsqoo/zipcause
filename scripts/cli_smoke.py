@@ -9,9 +9,13 @@ import zipfile
 from pathlib import Path
 
 
-def write_zip(path: Path, timestamp: tuple[int, int, int, int, int, int]) -> None:
+def write_zip(
+    path: Path,
+    timestamp: tuple[int, int, int, int, int, int],
+    compression: int = zipfile.ZIP_STORED,
+) -> None:
     info = zipfile.ZipInfo("app/config.json", date_time=timestamp)
-    info.compress_type = zipfile.ZIP_STORED
+    info.compress_type = compression
     info.external_attr = 0o100644 << 16
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr(info, b'{"mode":"demo"}\n')
@@ -40,9 +44,19 @@ def main() -> None:
         first = root / "first.zip"
         identical = root / "identical.zip"
         changed = root / "changed.zip"
+        deflated = root / "deflated.zip"
         write_zip(first, (2024, 1, 1, 0, 0, 0))
         write_zip(identical, (2024, 1, 1, 0, 0, 0))
         write_zip(changed, (2024, 1, 3, 0, 0, 0))
+        write_zip(
+            deflated,
+            (2024, 1, 1, 0, 0, 0),
+            compression=zipfile.ZIP_DEFLATED,
+        )
+
+        with zipfile.ZipFile(deflated) as archive:
+            if archive.testzip() is not None:
+                raise SystemExit("Python generated an invalid DEFLATE fixture")
 
         same_result = run_cli(
             "compare", str(first), str(identical), "--format", "json"
@@ -52,6 +66,19 @@ def main() -> None:
         same_report = json.loads(same_result.stdout)
         if same_report != {"byte_identical": True, "findings": []}:
             raise SystemExit(f"unexpected identical report: {same_report!r}")
+
+        deflated_result = run_cli(
+            "compare", str(deflated), str(deflated), "--format", "json"
+        )
+        if deflated_result.returncode != 0:
+            raise SystemExit(
+                "Python DEFLATE archive was rejected: "
+                f"{deflated_result.returncode}: "
+                f"{deflated_result.stdout}{deflated_result.stderr}"
+            )
+        deflated_report = json.loads(deflated_result.stdout)
+        if deflated_report != {"byte_identical": True, "findings": []}:
+            raise SystemExit(f"unexpected DEFLATE report: {deflated_report!r}")
 
         version_result = run_cli("--version")
         if version_result.returncode != 0 or version_result.stdout.strip() != "zipcause 0.1.0":
