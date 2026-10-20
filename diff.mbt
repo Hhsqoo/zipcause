@@ -58,6 +58,35 @@ fn add_finding(
 }
 
 ///|
+fn compression_method_label(method : Int32) -> String {
+  match method {
+    0 => "STORE (0)"
+    8 => "DEFLATE (8)"
+    _ => "method \{method}"
+  }
+}
+
+///|
+fn two_digits(value : Int32) -> String {
+  if value < 10 {
+    "0\{value}"
+  } else {
+    "\{value}"
+  }
+}
+
+///|
+fn format_dos_timestamp(date : Int32, time : Int32) -> String {
+  let year = 1980 + (date >> 9)
+  let month = (date >> 5) & 0x0F
+  let day = date & 0x1F
+  let hour = (time >> 11) & 0x1F
+  let minute = (time >> 5) & 0x3F
+  let second = (time & 0x1F) * 2
+  "\{year}-\{two_digits(month)}-\{two_digits(day)} \{two_digits(hour)}:\{two_digits(minute)}:\{two_digits(second)}"
+}
+
+///|
 /// Compares two supported ZIP archives by member name and container metadata.
 /// Invalid, unsupported, or over-limit archives raise `ZipCauseError`.
 pub fn compare_zip_bytes(
@@ -164,7 +193,7 @@ pub fn compare_zip_bytes(
                 findings,
                 "member_content_changed",
                 left_entry.name,
-                "uncompressed entry data differs",
+                "uncompressed entry data differs (first: \{left_data.length()} bytes; second: \{right_data.length()} bytes)",
               )
             }
             if left_entry.compression_method != right_entry.compression_method {
@@ -172,7 +201,7 @@ pub fn compare_zip_bytes(
                 findings,
                 "compression_method_changed",
                 left_entry.name,
-                "ZIP compression method changed",
+                "compression method changed from \{compression_method_label(left_entry.compression_method)} to \{compression_method_label(right_entry.compression_method)}",
               )
             }
             if same_content &&
@@ -185,7 +214,7 @@ pub fn compare_zip_bytes(
                 findings,
                 "compressed_stream_changed",
                 left_entry.name,
-                "uncompressed data matches but compressed bytes differ",
+                "uncompressed data matches but compressed bytes differ (first: \{left_entry.compressed_size} bytes; second: \{right_entry.compressed_size} bytes)",
               )
             }
           }
@@ -202,7 +231,7 @@ pub fn compare_zip_bytes(
             findings,
             "timestamp_changed",
             left_entry.name,
-            "DOS timestamp differs between archive entries",
+            "DOS timestamp changed from \{format_dos_timestamp(left_entry.modified_date, left_entry.modified_time)} to \{format_dos_timestamp(right_entry.modified_date, right_entry.modified_time)}",
           )
         }
         if left_entry.external_attributes != right_entry.external_attributes {
@@ -210,7 +239,7 @@ pub fn compare_zip_bytes(
             findings,
             "attributes_changed",
             left_entry.name,
-            "external file attributes differ",
+            "external file attributes changed from \{left_entry.external_attributes} to \{right_entry.external_attributes}",
           )
         }
         if left_entry.flags != right_entry.flags {
@@ -218,7 +247,7 @@ pub fn compare_zip_bytes(
             findings,
             "flags_changed",
             left_entry.name,
-            "general-purpose ZIP flags differ",
+            "general-purpose ZIP flags changed from \{left_entry.flags} to \{right_entry.flags}",
           )
         }
         if !equal_bytes(left_entry.local_extra, right_entry.local_extra) ||
@@ -227,7 +256,7 @@ pub fn compare_zip_bytes(
             findings,
             "extra_fields_changed",
             left_entry.name,
-            "local or central extra fields differ",
+            "extra fields changed (local: \{left_entry.local_extra.length()} to \{right_entry.local_extra.length()} bytes; central: \{left_entry.central_extra.length()} to \{right_entry.central_extra.length()} bytes)",
           )
         }
         if !equal_bytes(left_entry.comment, right_entry.comment) {
@@ -235,7 +264,7 @@ pub fn compare_zip_bytes(
             findings,
             "entry_comment_changed",
             left_entry.name,
-            "entry comments differ",
+            "entry comment length changed from \{left_entry.comment.length()} to \{right_entry.comment.length()} bytes",
           )
         }
       }
@@ -243,7 +272,10 @@ pub fn compare_zip_bytes(
   }
   if !equal_bytes(left.comment, right.comment) {
     add_finding(
-      findings, "archive_comment_changed", "", "archive comments differ",
+      findings,
+      "archive_comment_changed",
+      "",
+      "archive comment length changed from \{left.comment.length()} to \{right.comment.length()} bytes",
     )
   }
   let byte_identical = equal_bytes(left_bytes, right_bytes)

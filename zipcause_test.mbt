@@ -122,7 +122,9 @@ test "payload change is reported by member name" {
   assert_true(
     result.findings.any(fn(finding) {
       finding.kind == "member_content_changed" &&
-      finding.path == "notes/hello.txt"
+      finding.path == "notes/hello.txt" &&
+      finding.detail ==
+      "uncompressed entry data differs (first: 11 bytes; second: 10 bytes)"
     }),
   )
 }
@@ -223,7 +225,10 @@ test "compression method change is reported for equal content" {
   let result = @zipcause.compare_zip_bytes(stored, deflated)
   assert_true(
     result.findings.any(fn(finding) {
-      finding.kind == "compression_method_changed" && finding.path == "a.txt"
+      finding.kind == "compression_method_changed" &&
+      finding.path == "a.txt" &&
+      finding.detail ==
+      "compression method changed from STORE (0) to DEFLATE (8)"
     }),
   )
 }
