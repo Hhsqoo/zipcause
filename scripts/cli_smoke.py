@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import tempfile
@@ -19,6 +20,20 @@ def write_zip(
     info.external_attr = 0o100644 << 16
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr(info, b'{"mode":"demo"}\n')
+
+
+class NonSeekableBuffer(io.BytesIO):
+    def seekable(self) -> bool:
+        return False
+
+
+def write_streamed_zip(path: Path) -> None:
+    buffer = NonSeekableBuffer()
+    info = zipfile.ZipInfo("app/config.json", date_time=(2024, 1, 1, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr(info, b'{"mode":"demo"}\n')
+    path.write_bytes(buffer.getvalue())
 
 
 def run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -45,6 +60,7 @@ def main() -> None:
         identical = root / "identical.zip"
         changed = root / "changed.zip"
         deflated = root / "deflated.zip"
+        streamed = root / "streamed.zip"
         write_zip(first, (2024, 1, 1, 0, 0, 0))
         write_zip(identical, (2024, 1, 1, 0, 0, 0))
         write_zip(changed, (2024, 1, 3, 0, 0, 0))
@@ -53,10 +69,15 @@ def main() -> None:
             (2024, 1, 1, 0, 0, 0),
             compression=zipfile.ZIP_DEFLATED,
         )
+        write_streamed_zip(streamed)
 
         with zipfile.ZipFile(deflated) as archive:
             if archive.testzip() is not None:
                 raise SystemExit("Python generated an invalid DEFLATE fixture")
+        with zipfile.ZipFile(streamed) as archive:
+            info = archive.getinfo("app/config.json")
+            if archive.testzip() is not None or not info.flag_bits & 0x0008:
+                raise SystemExit("streamed fixture must use a valid data descriptor")
 
         same_result = run_cli(
             "compare", str(first), str(identical), "--format", "json"
@@ -79,6 +100,37 @@ def main() -> None:
         deflated_report = json.loads(deflated_result.stdout)
         if deflated_report != {"byte_identical": True, "findings": []}:
             raise SystemExit(f"unexpected DEFLATE report: {deflated_report!r}")
+
+        streamed_result = run_cli(
+            "compare", str(streamed), str(streamed), "--format", "json"
+        )
+        if streamed_result.returncode != 0:
+            raise SystemExit(
+                "streamed ZIP with a data descriptor was rejected: "
+                f"{streamed_result.returncode}: "
+                f"{streamed_result.stdout}{streamed_result.stderr}"
+            )
+        streamed_report = json.loads(streamed_result.stdout)
+        if streamed_report != {"byte_identical": True, "findings": []}:
+            raise SystemExit(f"unexpected streamed ZIP report: {streamed_report!r}")
+
+        descriptor_diff = run_cli(
+            "compare", str(deflated), str(streamed), "--format", "json"
+        )
+        if descriptor_diff.returncode != 1:
+            raise SystemExit(
+                "normal and streamed DEFLATE archives should differ: "
+                f"{descriptor_diff.returncode}: "
+                f"{descriptor_diff.stdout}{descriptor_diff.stderr}"
+            )
+        descriptor_report = json.loads(descriptor_diff.stdout)
+        if not any(
+            finding["kind"] == "flags_changed"
+            for finding in descriptor_report["findings"]
+        ):
+            raise SystemExit(
+                f"data descriptor difference was not classified: {descriptor_report!r}"
+            )
 
         version_result = run_cli("--version")
         if version_result.returncode != 0 or version_result.stdout.strip() != "zipcause 0.1.0":
