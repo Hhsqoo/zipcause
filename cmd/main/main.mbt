@@ -2,6 +2,9 @@
 const USAGE : String = "Usage: zipcause compare <first.zip> <second.zip> [--format text|json]"
 
 ///|
+const VERSION : String = "0.1.0"
+
+///|
 pub suberror CliError {
   CliError(String)
 }
@@ -50,6 +53,10 @@ fn run_compare(
 ///|
 fn execute(args : Array[String]) -> Int32 {
   match args {
+    [_program, "--version"] | [_program, "-V"] => {
+      println("zipcause \{VERSION}")
+      0
+    }
     [_program, "--help"] | [_program, "-h"] => {
       println(USAGE)
       0

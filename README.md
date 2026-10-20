@@ -9,6 +9,7 @@ With the MoonBit toolchain installed:
 ```sh
 moon run --target native cmd/main -- compare old.zip new.zip
 moon run --target native cmd/main -- compare old.zip new.zip --format json
+moon run --target native cmd/main -- --version
 ```
 
 The CLI currently targets native hosts. The core was built and tested with MoonBit compiler 0.10.16.
@@ -28,6 +29,7 @@ Archives differ:
 ```
 
 JSON output has a `byte_identical` boolean and a `findings` array. Each finding contains `kind`, `path`, and `detail` fields.
+Use `--version` to print the CLI version. Diagnostics for invalid input and command usage are written to stderr, leaving JSON stdout available to scripts.
 
 ## Supported input
 

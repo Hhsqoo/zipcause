@@ -53,6 +53,13 @@ def main() -> None:
         if same_report != {"byte_identical": True, "findings": []}:
             raise SystemExit(f"unexpected identical report: {same_report!r}")
 
+        version_result = run_cli("--version")
+        if version_result.returncode != 0 or version_result.stdout.strip() != "zipcause 0.1.0":
+            raise SystemExit(
+                f"unexpected version output: {version_result.returncode}: "
+                f"{version_result.stdout}{version_result.stderr}"
+            )
+
         changed_result = run_cli(
             "compare", str(first), str(changed), "--format", "json"
         )
