@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Hhsqoo/zipcause"
+
+// Values
+pub fn compare_zip_bytes(BytesView, BytesView) -> Comparison raise ZipCauseError
+
+pub fn comparison_to_json(Comparison) -> String
+
+pub fn inspect_zip(BytesView) -> ArchiveMeta raise ZipCauseError
+
+pub fn verify_zip_payloads(BytesView) -> Unit raise ZipCauseError
+
+// Errors
+pub suberror ZipCauseError {
+  InvalidArchive(String)
+  UnsupportedFeature(String)
+  ResourceLimit(String)
+}
+
+// Types and methods
+pub struct ArchiveMeta {
+  entries : Array[EntryMeta]
+  comment : BytesView
+}
+
+pub struct Comparison {
+  byte_identical : Bool
+  findings : Array[Finding]
+}
+
+pub struct EntryMeta {
+  name : String
+  index : Int
+  flags : Int
+  compression_method : Int
+  modified_time : Int
+  modified_date : Int
+  local_modified_time : Int
+  local_modified_date : Int
+  crc32 : UInt
+  compressed_size : Int
+  uncompressed_size : Int
+  external_attributes : UInt
+  local_extra : BytesView
+  central_extra : BytesView
+  comment : BytesView
+  compressed_data : BytesView
+}
+
+pub struct Finding {
+  kind : String
+  path : String
+  detail : String
+}
+
+// Type aliases
+
+// Traits
