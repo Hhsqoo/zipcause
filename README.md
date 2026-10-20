@@ -11,7 +11,7 @@ moon run --target native cmd/main -- compare old.zip new.zip
 moon run --target native cmd/main -- compare old.zip new.zip --format json
 ```
 
-The CLI currently targets native hosts. The core was built and tested with MoonBit compiler 0.10.14.
+The CLI currently targets native hosts. The core was built and tested with MoonBit compiler 0.10.16.
 
 Exit codes are stable for scripts:
 

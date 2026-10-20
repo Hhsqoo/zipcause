@@ -10,17 +10,17 @@ pub suberror ZipCauseError {
 /// Metadata for one member, including byte slices into the original archive.
 pub struct EntryMeta {
   name : String
-  index : Int
-  flags : Int
-  compression_method : Int
-  modified_time : Int
-  modified_date : Int
-  local_modified_time : Int
-  local_modified_date : Int
-  crc32 : UInt
-  compressed_size : Int
-  uncompressed_size : Int
-  external_attributes : UInt
+  index : Int32
+  flags : Int32
+  compression_method : Int32
+  modified_time : Int32
+  modified_date : Int32
+  local_modified_time : Int32
+  local_modified_date : Int32
+  crc32 : UInt32
+  compressed_size : Int32
+  uncompressed_size : Int32
+  external_attributes : UInt32
   local_extra : BytesView
   central_extra : BytesView
   comment : BytesView
@@ -35,16 +35,16 @@ pub struct ArchiveMeta {
 }
 
 ///|
-const MAX_ARCHIVE_BYTES : Int = 67108864
+const MAX_ARCHIVE_BYTES : Int32 = 67108864
 
 ///|
-const MAX_ENTRIES : Int = 10000
+const MAX_ENTRIES : Int32 = 10000
 
 ///|
-const MAX_MEMBER_BYTES : Int = 33554432
+const MAX_MEMBER_BYTES : Int32 = 33554432
 
 ///|
-const MAX_TOTAL_BYTES : Int = 134217728
+const MAX_TOTAL_BYTES : Int32 = 134217728
 
 ///|
 fn fail_archive(message : String) -> Unit raise ZipCauseError {
@@ -52,7 +52,7 @@ fn fail_archive(message : String) -> Unit raise ZipCauseError {
 }
 
 ///|
-fn le16(bytes : BytesView, offset : Int) -> Int raise ZipCauseError {
+fn le16(bytes : BytesView, offset : Int32) -> Int32 raise ZipCauseError {
   if offset < 0 || offset > bytes.length() - 2 {
     fail_archive("truncated 16-bit field")
   }
@@ -60,7 +60,7 @@ fn le16(bytes : BytesView, offset : Int) -> Int raise ZipCauseError {
 }
 
 ///|
-fn le32(bytes : BytesView, offset : Int) -> UInt raise ZipCauseError {
+fn le32(bytes : BytesView, offset : Int32) -> UInt32 raise ZipCauseError {
   if offset < 0 || offset > bytes.length() - 4 {
     fail_archive("truncated 32-bit field")
   }
@@ -72,7 +72,7 @@ fn le32(bytes : BytesView, offset : Int) -> UInt raise ZipCauseError {
 }
 
 ///|
-fn safe_int(value : UInt, field : String) -> Int raise ZipCauseError {
+fn safe_int(value : UInt32, field : String) -> Int32 raise ZipCauseError {
   if value > 0x7FFFFFFF {
     raise UnsupportedFeature("ZIP64 or oversized \{field} is not supported")
   }
@@ -100,7 +100,7 @@ fn equal_bytes(left : BytesView, right : BytesView) -> Bool {
 }
 
 ///|
-fn find_eocd(bytes : BytesView) -> Int raise ZipCauseError {
+fn find_eocd(bytes : BytesView) -> Int32 raise ZipCauseError {
   if bytes.length() < 22 {
     fail_archive("file is too short to contain an end record")
   }

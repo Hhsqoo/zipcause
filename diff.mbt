@@ -68,7 +68,7 @@ pub fn compare_zip_bytes(
   let right = inspect_zip(right_bytes)
   let left_payloads = decoded_payloads(left_bytes)
   let right_payloads = decoded_payloads(right_bytes)
-  let right_indices : Map[String, Int] = Map(
+  let right_indices : Map[String, Int32] = Map(
     [],
     capacity=right.entries.length(),
   )
@@ -91,7 +91,10 @@ pub fn compare_zip_bytes(
       Some(_) => common_left.push(entry.name)
     }
   }
-  let left_indices : Map[String, Int] = Map([], capacity=left.entries.length())
+  let left_indices : Map[String, Int32] = Map(
+    [],
+    capacity=left.entries.length(),
+  )
   for entry in left.entries {
     left_indices.set(entry.name, entry.index)
   }

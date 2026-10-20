@@ -18,7 +18,7 @@ fn run_compare(
   first_path : String,
   second_path : String,
   format : String,
-) -> Int raise CliError {
+) -> Int32 raise CliError {
   let first = read_input(first_path)
   let second = read_input(second_path)
   let comparison = @zipcause.compare_zip_bytes(first, second) catch {
@@ -48,7 +48,7 @@ fn run_compare(
 }
 
 ///|
-fn execute(args : Array[String]) -> Int {
+fn execute(args : Array[String]) -> Int32 {
   match args {
     [_program, "--help"] | [_program, "-h"] => {
       println(USAGE)

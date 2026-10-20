@@ -30,17 +30,17 @@ pub struct Comparison {
 
 pub struct EntryMeta {
   name : String
-  index : Int
-  flags : Int
-  compression_method : Int
-  modified_time : Int
-  modified_date : Int
-  local_modified_time : Int
-  local_modified_date : Int
-  crc32 : UInt
-  compressed_size : Int
-  uncompressed_size : Int
-  external_attributes : UInt
+  index : Int32
+  flags : Int32
+  compression_method : Int32
+  modified_time : Int32
+  modified_date : Int32
+  local_modified_time : Int32
+  local_modified_date : Int32
+  crc32 : UInt32
+  compressed_size : Int32
+  uncompressed_size : Int32
+  external_attributes : UInt32
   local_extra : BytesView
   central_extra : BytesView
   comment : BytesView

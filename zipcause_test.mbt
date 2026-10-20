@@ -13,7 +13,7 @@ fn test_zip(
 fn test_deflated_zip(
   name : String,
   body : BytesView,
-  level : Int,
+  level : Int32,
 ) -> Bytes raise @zip.ZipError {
   let archive = @zip.Archive::Archive()
   archive.add(name, body, compression=@zip.Deflate)
@@ -21,7 +21,7 @@ fn test_deflated_zip(
 }
 
 ///|
-fn find_signature(bytes : BytesView, signature : UInt) -> Int {
+fn find_signature(bytes : BytesView, signature : UInt32) -> Int32 {
   let mut pos = 0
   while pos <= bytes.length() - 4 {
     let value = bytes[pos].to_int().reinterpret_as_uint() |
@@ -37,18 +37,18 @@ fn find_signature(bytes : BytesView, signature : UInt) -> Int {
 }
 
 ///|
-fn set_u16(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn set_u16(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = (value & 0xFF).to_byte()
   bytes[offset + 1] = ((value >> 8) & 0xFF).to_byte()
 }
 
 ///|
-fn get_u16(bytes : BytesView, offset : Int) -> Int {
+fn get_u16(bytes : BytesView, offset : Int32) -> Int32 {
   bytes[offset].to_int() | (bytes[offset + 1].to_int() << 8)
 }
 
 ///|
-fn set_u32(bytes : Array[Byte], offset : Int, value : UInt) -> Unit {
+fn set_u32(bytes : Array[Byte], offset : Int32, value : UInt32) -> Unit {
   bytes[offset] = (value & 0xFF).reinterpret_as_int().to_byte()
   bytes[offset + 1] = ((value >> 8) & 0xFF).reinterpret_as_int().to_byte()
   bytes[offset + 2] = ((value >> 16) & 0xFF).reinterpret_as_int().to_byte()
@@ -58,7 +58,7 @@ fn set_u32(bytes : Array[Byte], offset : Int, value : UInt) -> Unit {
 ///|
 fn insert_bytes(
   source : BytesView,
-  offset : Int,
+  offset : Int32,
   inserted : Array[Byte],
 ) -> Array[Byte] {
   let output = Array::make(source.length() + inserted.length(), b'\x00')
