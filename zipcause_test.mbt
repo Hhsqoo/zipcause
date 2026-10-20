@@ -248,6 +248,20 @@ test "supported UTF-8 flag difference is reported" {
 }
 
 ///|
+test "UTF-8 entry names require the UTF-8 flag" {
+  let archive = test_zip("资料/config.json", b"{}", @zip.Store)
+  let metadata = @zipcause.inspect_zip(archive)
+  assert_eq(metadata.entries[0].name, "资料/config.json")
+
+  let changed = archive.to_array()
+  let central = find_signature(archive, 0x02014B50)
+  assert_true(central >= 0)
+  set_u16(changed, 6, get_u16(archive, 6) & 0xF7FF)
+  set_u16(changed, central + 8, get_u16(archive, central + 8) & 0xF7FF)
+  assert_true(is_unsupported_zip(Bytes::from_array(changed)))
+}
+
+///|
 test "external attributes change is reported" {
   let archive = test_zip("a.txt", b"hello", @zip.Store)
   let changed = archive.to_array()

@@ -80,7 +80,19 @@ fn safe_int(value : UInt32, field : String) -> Int32 raise ZipCauseError {
 }
 
 ///|
-fn decode_zip_name(bytes : BytesView) -> String raise ZipCauseError {
+fn decode_zip_name(
+  bytes : BytesView,
+  flags : Int32,
+) -> String raise ZipCauseError {
+  if (flags & 0x0800) == 0 {
+    for i = 0; i < bytes.length(); i = i + 1 {
+      if bytes[i].to_int() > 0x7F {
+        raise UnsupportedFeature(
+          "non-ASCII entry names require the ZIP UTF-8 flag",
+        )
+      }
+    }
+  }
   @encoding/utf8.decode(bytes) catch {
     _ => raise InvalidArchive("entry name is not valid UTF-8")
   }
@@ -208,7 +220,7 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
       fail_archive("truncated central directory entry")
     }
     let raw_name = bytes[variable_start:variable_start + name_length]
-    let name = decode_zip_name(raw_name)
+    let name = decode_zip_name(raw_name, flags)
     if seen.get(name) is Some(_) {
       raise UnsupportedFeature("duplicate entry name: \{name}")
     }
