@@ -12,7 +12,7 @@ moon run --target native cmd/main -- compare old.zip new.zip --format json
 moon run --target native cmd/main -- --version
 ```
 
-The CLI currently targets native hosts. The core was built and tested with MoonBit compiler 0.10.16.
+The CLI currently targets native hosts. CI pins MoonBit compiler 0.10.16.
 
 Exit codes are stable for scripts:
 
@@ -24,18 +24,18 @@ Example text output:
 
 ```text
 Archives differ:
-- member_content_changed: app/config.json — uncompressed entry data differs
-- timestamp_changed: app/config.json — DOS timestamp differs between archive entries
+- compression_method_changed: "app/config.json" — compression method changed from STORE (0) to DEFLATE (8)
+- timestamp_changed: "app/config.json" — DOS timestamp changed from 2024-01-01 00:00:00 to 2024-01-03 00:00:00
 ```
 
-JSON output has a `byte_identical` boolean and a `findings` array. Each finding contains `kind`, `path`, and `detail` fields.
+JSON output has a `byte_identical` boolean and a `findings` array. Each finding contains `kind`, `path`, and `detail` fields. Text output JSON-quotes member names so whitespace and control characters remain unambiguous.
 Use `--version` to print the CLI version. Diagnostics for invalid input and command usage are written to stderr, leaving JSON stdout available to scripts.
 
 ## Supported input
 
 - Single-volume classic ZIP archives
 - STORE and DEFLATE entries
-- ASCII and UTF-8 entry names
+- ASCII names and valid UTF-8 names with the ZIP UTF-8 flag set; non-ASCII legacy encodings are rejected
 - Up to 64 MiB input, 10,000 entries, 32 MiB uncompressed per entry, and 128 MiB total uncompressed data
 
 ZIP64, encrypted entries, duplicate names, other compression methods, and multi-volume archives are rejected with an explicit error. The tool does not rewrite archives, validate signatures, or infer source-code or build-environment equivalence. ZIP container fields not yet recognized are reported as `unclassified_container_difference` rather than silently ignored.
@@ -51,5 +51,7 @@ moon build --target native
 moon test --target native
 python scripts/cli_smoke.py
 ```
+
+The MoonBit suite has 28 tests. The Python CLI smoke test generates stored and DEFLATE archives, including streamed ZIPs that use data descriptors, and checks text/JSON output and exit codes. See [the MVP acceptance checklist](docs/MVP_ACCEPTANCE.md) for the promised scope and the matching evidence.
 
 The comparison core uses [`moonbit-community/flate`](https://github.com/moonbit-community/flate) for bounded ZIP decoding and CRC verification. ZipCause is licensed under Apache-2.0.
