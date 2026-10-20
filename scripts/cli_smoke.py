@@ -151,6 +151,18 @@ def main() -> None:
         if not any(finding["kind"] == "timestamp_changed" for finding in changed_report["findings"]):
             raise SystemExit(f"timestamp difference was not classified: {changed_report!r}")
 
+        text_result = run_cli("compare", str(first), str(changed))
+        expected_timestamp = (
+            "timestamp_changed: app/config.json — DOS timestamp changed from "
+            "2024-01-01 00:00:00 to 2024-01-03 00:00:00"
+        )
+        if text_result.returncode != 1 or expected_timestamp not in text_result.stdout:
+            raise SystemExit(
+                "text output must explain the observed timestamp values: "
+                f"{text_result.returncode}: "
+                f"{text_result.stdout}{text_result.stderr}"
+            )
+
         missing_result = run_cli(
             "compare",
             str(root / "missing.zip"),
