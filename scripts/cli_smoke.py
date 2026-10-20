@@ -17,7 +17,7 @@ def write_zip(path: Path, timestamp: tuple[int, int, int, int, int, int]) -> Non
         archive.writestr(info, b'{"mode":"demo"}\n')
 
 
-def run_cli(first: Path, second: Path) -> subprocess.CompletedProcess[str]:
+def run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             "moon",
@@ -26,11 +26,7 @@ def run_cli(first: Path, second: Path) -> subprocess.CompletedProcess[str]:
             "native",
             "cmd/main",
             "--",
-            "compare",
-            str(first),
-            str(second),
-            "--format",
-            "json",
+            *arguments,
         ],
         check=False,
         capture_output=True,
@@ -48,23 +44,52 @@ def main() -> None:
         write_zip(identical, (2024, 1, 1, 0, 0, 0))
         write_zip(changed, (2024, 1, 3, 0, 0, 0))
 
-        same_result = run_cli(first, identical)
+        same_result = run_cli(
+            "compare", str(first), str(identical), "--format", "json"
+        )
         if same_result.returncode != 0:
             raise SystemExit(f"identical archives returned {same_result.returncode}: {same_result.stdout}{same_result.stderr}")
         same_report = json.loads(same_result.stdout)
         if same_report != {"byte_identical": True, "findings": []}:
             raise SystemExit(f"unexpected identical report: {same_report!r}")
 
-        changed_result = run_cli(first, changed)
+        changed_result = run_cli(
+            "compare", str(first), str(changed), "--format", "json"
+        )
         if changed_result.returncode != 1:
             raise SystemExit(f"different archives returned {changed_result.returncode}: {changed_result.stdout}{changed_result.stderr}")
         changed_report = json.loads(changed_result.stdout)
         if not any(finding["kind"] == "timestamp_changed" for finding in changed_report["findings"]):
             raise SystemExit(f"timestamp difference was not classified: {changed_report!r}")
 
-        missing_result = run_cli(root / "missing.zip", identical)
-        if missing_result.returncode != 2 or "cannot read" not in missing_result.stdout:
-            raise SystemExit(f"missing input did not return the documented error code: {missing_result.returncode}: {missing_result.stdout}{missing_result.stderr}")
+        missing_result = run_cli(
+            "compare",
+            str(root / "missing.zip"),
+            str(identical),
+            "--format",
+            "json",
+        )
+        if (
+            missing_result.returncode != 2
+            or "cannot read" not in missing_result.stderr
+            or missing_result.stdout
+        ):
+            raise SystemExit(
+                "missing input must return code 2, keep JSON stdout empty, "
+                f"and write diagnostics to stderr: {missing_result.returncode}: "
+                f"{missing_result.stdout}{missing_result.stderr}"
+            )
+
+        usage_result = run_cli("invalid-command")
+        if (
+            usage_result.returncode != 2
+            or "Usage: zipcause compare" not in usage_result.stderr
+            or usage_result.stdout
+        ):
+            raise SystemExit(
+                "invalid command must return code 2 and write usage to stderr: "
+                f"{usage_result.returncode}: {usage_result.stdout}{usage_result.stderr}"
+            )
 
     print("CLI smoke checks passed (identical, differing, and invalid ZIP inputs).")
 

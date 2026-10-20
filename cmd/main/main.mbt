@@ -57,7 +57,7 @@ fn execute(args : Array[String]) -> Int32 {
     [_program, "compare", first, second] =>
       run_compare(first, second, "text") catch {
         CliError(message) => {
-          println("error: \{message}")
+          eprintln("error: \{message}")
           2
         }
       }
@@ -65,12 +65,12 @@ fn execute(args : Array[String]) -> Int32 {
       format == "text" =>
       run_compare(first, second, format) catch {
         CliError(message) => {
-          println("error: \{message}")
+          eprintln("error: \{message}")
           2
         }
       }
     _ => {
-      println(USAGE)
+      eprintln(USAGE)
       2
     }
   }
