@@ -195,8 +195,16 @@ def main() -> None:
         special_text_result = run_cli(
             "compare", str(special_first), str(special_changed)
         )
-        expected_special_path = f"timestamp_changed: {json.dumps(special_name)}"
-        if special_text_result.returncode != 1 or expected_special_path not in special_text_result.stdout:
+        marker = "timestamp_changed: "
+        marker_index = special_text_result.stdout.find(marker)
+        decoded_path = None
+        if marker_index >= 0:
+            path_text = special_text_result.stdout[marker_index + len(marker) :]
+            try:
+                decoded_path, _ = json.JSONDecoder().raw_decode(path_text)
+            except json.JSONDecodeError:
+                pass
+        if special_text_result.returncode != 1 or decoded_path != special_name:
             raise SystemExit(
                 "text output must safely quote newlines and quotes in filenames: "
                 f"{special_text_result.returncode}: "
