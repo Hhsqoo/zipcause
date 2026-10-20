@@ -95,6 +95,16 @@ fn is_invalid_zip(bytes : BytesView) -> Bool {
 }
 
 ///|
+fn has_resource_limit(bytes : BytesView) -> Bool {
+  try @zipcause.inspect_zip(bytes) catch {
+    @zipcause.ResourceLimit(_) => true
+    _ => false
+  } noraise {
+    _ => false
+  }
+}
+
+///|
 fn has_invalid_payload(bytes : BytesView) -> Bool {
   try @zipcause.verify_zip_payloads(bytes) catch {
     @zipcause.InvalidArchive(_) => true
@@ -425,6 +435,27 @@ test "duplicate entry names are rejected" {
   archive.add("same.txt", b"one", compression=@zip.Store)
   archive.add("same.txt", b"two", compression=@zip.Store)
   assert_true(is_unsupported_zip(@zip.write(archive)))
+}
+
+///|
+test "entry count above configured limit is rejected" {
+  let archive = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = archive.to_array()
+  let eocd = find_signature(archive, 0x06054B50)
+  assert_true(eocd >= 0)
+  set_u16(changed, eocd + 8, 10001)
+  set_u16(changed, eocd + 10, 10001)
+  assert_true(has_resource_limit(Bytes::from_array(changed)))
+}
+
+///|
+test "member size above configured limit is rejected" {
+  let archive = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = archive.to_array()
+  let central = find_signature(archive, 0x02014B50)
+  assert_true(central >= 0)
+  set_u32(changed, central + 24, 33554433)
+  assert_true(has_resource_limit(Bytes::from_array(changed)))
 }
 
 ///|
