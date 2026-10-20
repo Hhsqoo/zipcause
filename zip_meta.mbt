@@ -246,6 +246,16 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
       local_name_length != name_length {
       fail_archive("local and central headers disagree for \{name}")
     }
+    if (flags & 0x0008) == 0 &&
+      (
+        le32(bytes, local_offset + 14) != crc32 ||
+        safe_int(le32(bytes, local_offset + 18), "local compressed size") !=
+        compressed_size ||
+        safe_int(le32(bytes, local_offset + 22), "local uncompressed size") !=
+        uncompressed_size
+      ) {
+      fail_archive("local and central CRC or sizes disagree for \{name}")
+    }
     let local_name_start = local_offset + 30
     let local_extra_start = local_name_start + local_name_length
     let compressed_start = local_extra_start + local_extra_length

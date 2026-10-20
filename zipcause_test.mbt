@@ -162,6 +162,22 @@ test "truncated archive is rejected" {
 }
 
 ///|
+test "local CRC mismatch is rejected when no data descriptor is used" {
+  let archive = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = archive.to_array()
+  set_u32(changed, 14, 0x12345678)
+  assert_true(is_invalid_zip(Bytes::from_array(changed)))
+}
+
+///|
+test "local size mismatch is rejected when no data descriptor is used" {
+  let archive = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = archive.to_array()
+  set_u32(changed, 18, 4)
+  assert_true(is_invalid_zip(Bytes::from_array(changed)))
+}
+
+///|
 test "payload verifier accepts a valid archive" {
   let archive = test_zip("a.txt", b"hello", @zip.Store)
   @zipcause.verify_zip_payloads(archive)
