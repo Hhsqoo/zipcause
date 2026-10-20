@@ -26,6 +26,9 @@ class NonSeekableBuffer(io.BytesIO):
     def seekable(self) -> bool:
         return False
 
+    def seek(self, offset: int, whence: int = 0) -> int:
+        raise io.UnsupportedOperation("stream does not support seeking")
+
 
 def write_streamed_zip(path: Path) -> None:
     buffer = NonSeekableBuffer()
