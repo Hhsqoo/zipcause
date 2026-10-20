@@ -127,6 +127,31 @@ pub fn compare_zip_bytes(
       None => ()
       Some(right_index) => {
         let right_entry = right.entries[right_index]
+        if left_entry.version_made_by != right_entry.version_made_by {
+          add_finding(
+            findings,
+            "creator_version_changed",
+            left_entry.name,
+            "ZIP creator version differs between archive entries",
+          )
+        }
+        if left_entry.version_needed != right_entry.version_needed ||
+          left_entry.local_version_needed != right_entry.local_version_needed {
+          add_finding(
+            findings,
+            "required_version_changed",
+            left_entry.name,
+            "minimum ZIP version differs between archive entries",
+          )
+        }
+        if left_entry.internal_attributes != right_entry.internal_attributes {
+          add_finding(
+            findings,
+            "internal_attributes_changed",
+            left_entry.name,
+            "internal file attributes differ",
+          )
+        }
         match
           (
             left_payloads.get(left_entry.name),

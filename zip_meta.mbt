@@ -11,6 +11,9 @@ pub suberror ZipCauseError {
 pub struct EntryMeta {
   name : String
   index : Int32
+  version_made_by : Int32
+  version_needed : Int32
+  local_version_needed : Int32
   flags : Int32
   compression_method : Int32
   modified_time : Int32
@@ -20,6 +23,7 @@ pub struct EntryMeta {
   crc32 : UInt32
   compressed_size : Int32
   uncompressed_size : Int32
+  internal_attributes : Int32
   external_attributes : UInt32
   local_extra : BytesView
   central_extra : BytesView
@@ -170,6 +174,8 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
       le32(bytes, pos) != 0x02014B50 {
       fail_archive("invalid central directory entry")
     }
+    let version_made_by = le16(bytes, pos + 4)
+    let version_needed = le16(bytes, pos + 6)
     let flags = le16(bytes, pos + 8)
     let compression_method = le16(bytes, pos + 10)
     if (flags & 1) != 0 {
@@ -206,6 +212,7 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
     if disk_start != 0 {
       raise UnsupportedFeature("multi-volume entries are not supported")
     }
+    let internal_attributes = le16(bytes, pos + 36)
     let external_attributes = le32(bytes, pos + 38)
     let local_offset = safe_int(le32(bytes, pos + 42), "local header offset")
     if compressed_size == 0xFFFFFFFF ||
@@ -235,6 +242,7 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
       le32(bytes, local_offset) != 0x04034B50 {
       fail_archive("invalid local header for \{name}")
     }
+    let local_version_needed = le16(bytes, local_offset + 4)
     let local_flags = le16(bytes, local_offset + 6)
     let local_method = le16(bytes, local_offset + 8)
     let local_modified_time = le16(bytes, local_offset + 10)
@@ -272,6 +280,9 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
     entries.push({
       name,
       index,
+      version_made_by,
+      version_needed,
+      local_version_needed,
       flags,
       compression_method,
       modified_time,
@@ -281,6 +292,7 @@ pub fn inspect_zip(bytes : BytesView) -> ArchiveMeta raise ZipCauseError {
       crc32,
       compressed_size,
       uncompressed_size,
+      internal_attributes,
       external_attributes,
       local_extra,
       central_extra,

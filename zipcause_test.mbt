@@ -293,6 +293,51 @@ test "external attributes change is reported" {
 }
 
 ///|
+test "ZIP creator version change is reported" {
+  let first = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = first.to_array()
+  let central = find_signature(first, 0x02014B50)
+  assert_true(central >= 0)
+  set_u16(changed, central + 4, get_u16(first, central + 4) + 1)
+  let result = @zipcause.compare_zip_bytes(first, Bytes::from_array(changed))
+  assert_true(
+    result.findings.any(fn(finding) {
+      finding.kind == "creator_version_changed"
+    }),
+  )
+}
+
+///|
+test "ZIP required version change is reported" {
+  let first = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = first.to_array()
+  let central = find_signature(first, 0x02014B50)
+  assert_true(central >= 0)
+  set_u16(changed, central + 6, get_u16(first, central + 6) + 1)
+  let result = @zipcause.compare_zip_bytes(first, Bytes::from_array(changed))
+  assert_true(
+    result.findings.any(fn(finding) {
+      finding.kind == "required_version_changed"
+    }),
+  )
+}
+
+///|
+test "ZIP internal attributes change is reported" {
+  let first = test_zip("a.txt", b"hello", @zip.Store)
+  let changed = first.to_array()
+  let central = find_signature(first, 0x02014B50)
+  assert_true(central >= 0)
+  set_u16(changed, central + 36, get_u16(first, central + 36) + 1)
+  let result = @zipcause.compare_zip_bytes(first, Bytes::from_array(changed))
+  assert_true(
+    result.findings.any(fn(finding) {
+      finding.kind == "internal_attributes_changed"
+    }),
+  )
+}
+
+///|
 test "archive comment change is reported" {
   let archive = test_zip("a.txt", b"hello", @zip.Store)
   let eocd = find_signature(archive, 0x06054B50)

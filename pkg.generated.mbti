@@ -31,6 +31,9 @@ pub struct Comparison {
 pub struct EntryMeta {
   name : String
   index : Int32
+  version_made_by : Int32
+  version_needed : Int32
+  local_version_needed : Int32
   flags : Int32
   compression_method : Int32
   modified_time : Int32
@@ -40,6 +43,7 @@ pub struct EntryMeta {
   crc32 : UInt32
   compressed_size : Int32
   uncompressed_size : Int32
+  internal_attributes : Int32
   external_attributes : UInt32
   local_extra : BytesView
   central_extra : BytesView
