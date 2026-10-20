@@ -14,8 +14,9 @@ def write_zip(
     path: Path,
     timestamp: tuple[int, int, int, int, int, int],
     compression: int = zipfile.ZIP_STORED,
+    name: str = "app/config.json",
 ) -> None:
-    info = zipfile.ZipInfo("app/config.json", date_time=timestamp)
+    info = zipfile.ZipInfo(name, date_time=timestamp)
     info.compress_type = compression
     info.external_attr = 0o100644 << 16
     with zipfile.ZipFile(path, "w") as archive:
@@ -64,6 +65,9 @@ def main() -> None:
         changed = root / "changed.zip"
         deflated = root / "deflated.zip"
         streamed = root / "streamed.zip"
+        special_first = root / "special-first.zip"
+        special_changed = root / "special-changed.zip"
+        special_name = 'app/line\n"quoted".json'
         write_zip(first, (2024, 1, 1, 0, 0, 0))
         write_zip(identical, (2024, 1, 1, 0, 0, 0))
         write_zip(changed, (2024, 1, 3, 0, 0, 0))
@@ -73,6 +77,8 @@ def main() -> None:
             compression=zipfile.ZIP_DEFLATED,
         )
         write_streamed_zip(streamed)
+        write_zip(special_first, (2024, 1, 1, 0, 0, 0), name=special_name)
+        write_zip(special_changed, (2024, 1, 3, 0, 0, 0), name=special_name)
 
         with zipfile.ZipFile(deflated) as archive:
             if archive.testzip() is not None:
@@ -153,7 +159,7 @@ def main() -> None:
 
         text_result = run_cli("compare", str(first), str(changed))
         expected_timestamp = (
-            "timestamp_changed: app/config.json — DOS timestamp changed from "
+            'timestamp_changed: "app/config.json" — DOS timestamp changed from '
             "2024-01-01 00:00:00 to 2024-01-03 00:00:00"
         )
         if text_result.returncode != 1 or expected_timestamp not in text_result.stdout:
@@ -161,6 +167,40 @@ def main() -> None:
                 "text output must explain the observed timestamp values: "
                 f"{text_result.returncode}: "
                 f"{text_result.stdout}{text_result.stderr}"
+            )
+
+        special_json_result = run_cli(
+            "compare",
+            str(special_first),
+            str(special_changed),
+            "--format",
+            "json",
+        )
+        if special_json_result.returncode != 1:
+            raise SystemExit(
+                "special ZIP filename comparison failed: "
+                f"{special_json_result.returncode}: "
+                f"{special_json_result.stdout}{special_json_result.stderr}"
+            )
+        special_report = json.loads(special_json_result.stdout)
+        if not any(
+            finding["kind"] == "timestamp_changed"
+            and finding["path"] == special_name
+            for finding in special_report["findings"]
+        ):
+            raise SystemExit(
+                f"JSON did not preserve the exact special filename: {special_report!r}"
+            )
+
+        special_text_result = run_cli(
+            "compare", str(special_first), str(special_changed)
+        )
+        expected_special_path = f"timestamp_changed: {json.dumps(special_name)}"
+        if special_text_result.returncode != 1 or expected_special_path not in special_text_result.stdout:
+            raise SystemExit(
+                "text output must safely quote newlines and quotes in filenames: "
+                f"{special_text_result.returncode}: "
+                f"{special_text_result.stdout}{special_text_result.stderr}"
             )
 
         missing_result = run_cli(

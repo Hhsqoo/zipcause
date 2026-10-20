@@ -39,7 +39,11 @@ fn run_compare(
   } else {
     println("Archives differ:")
     for finding in comparison.findings {
-      let location = if finding.path == "" { "archive" } else { finding.path }
+      let location = if finding.path == "" {
+        "archive"
+      } else {
+        Json(finding.path).stringify()
+      }
       println("- \{finding.kind}: \{location} — \{finding.detail}")
     }
   }
