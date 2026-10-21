@@ -1,6 +1,6 @@
 # ZipCause MVP 验收对照
 
-本文把项目申报范围对应到代码路径和复现命令，供初审及后续验收核对。当前目标是 MoonBit Native CLI；本项目尚未发布到 Mooncakes。
+本文把项目申报范围对应到代码路径和复现命令，供初审及后续验收核对。当前目标是 MoonBit Native CLI；本项目尚未发布到 Mooncakes。提交 `ec53c5c` 的 CI 已完成并通过格式检查、类型检查、构建、28 项 MoonBit 测试和 Python CLI 冒烟测试（[运行记录](https://github.com/Hhsqoo/zipcause/actions/runs/39561904784)）。
 
 ## 申报范围与证据
 
@@ -32,10 +32,10 @@ moon test --target native
 python scripts/cli_smoke.py
 ```
 
-CI 对上述 MoonBit 格式、检查、构建和测试步骤执行自动验证。对外提交前，应确认目标提交的 CI 通过，并核对 README 示例可以复现。
+CI 对上述 MoonBit 格式、检查、构建和测试步骤执行自动验证。当前已确认目标提交 `ec53c5c` 的上述步骤和 Python CLI 冒烟测试全部通过。开发用 Windows 环境中的 MoonBit 0.10.16 `moon check` 仍会因 `\\?\` 路径处理报 `Sys_error`，本机完整验证受阻；当前提交的可复现检查结果见 Ubuntu CI。
 
 ## 当前赛事阶段
 
 本项目按参赛者当前提供的信息处于材料初审阶段。赛事官网区分了报名申报和后续开发：十月报名最多提交 3 次；开发阶段要求在公开仓库持续保留 commits、Issues、PR 与更新记录，报名/验收截止为 2026 年 10 月 31 日。报名次数与 Git commits 是不同指标。
 
-本项目按参赛者提出的目标，继续形成 10 次以上可追溯的有效代码提交，每次对应具体功能、边界修复、测试或验收文档。此处是项目执行目标，不把提交数本身当成质量证明，也不将 Mooncakes 发布写作当前初审已完成事项。具体阶段要求以[赛事官网](https://moonbitlang.github.io/Hackathon2026/)和正式通知执行。
+截至 2026-10-21，主分支共 20 个提交；相对初始 3 提交基线，新增 17 个可追溯提交，涉及功能、边界修复、测试和验收文档。此处记录开发活动，不把提交数本身当成质量证明，也不将 Mooncakes 发布写作当前初审已完成事项。具体阶段要求以[赛事官网](https://moonbitlang.github.io/Hackathon2026/)和正式通知执行。
