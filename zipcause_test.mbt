@@ -454,6 +454,7 @@ test "member size above configured limit is rejected" {
   let changed = archive.to_array()
   let central = find_signature(archive, 0x02014B50)
   assert_true(central >= 0)
+  set_u32(changed, central + 20, 33554433)
   set_u32(changed, central + 24, 33554433)
   assert_true(has_resource_limit(Bytes::from_array(changed)))
 }
