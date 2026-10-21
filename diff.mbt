@@ -58,11 +58,11 @@ fn add_finding(
 }
 
 ///|
-fn compression_method_label(method : Int32) -> String {
-  match method {
+fn compression_method_label(compression_method : Int32) -> String {
+  match compression_method {
     0 => "STORE (0)"
     8 => "DEFLATE (8)"
-    _ => "method \{method}"
+    _ => "method \{compression_method}"
   }
 }
 
